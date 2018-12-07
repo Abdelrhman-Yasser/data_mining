@@ -1,4 +1,5 @@
 import numpy as np
+from collections import Counter
 
 class KNearestNeighbor(object):
   """ a kNN classifier with L2 distance """
@@ -71,7 +72,11 @@ class KNearestNeighbor(object):
         # training point, and store the result in dists[i, j]. You should   #
         # not use a loop over dimension.                                    #
         #####################################################################
-        pass
+        
+        dists[i, j] = np.linalg.norm(self.X_train[j] - X[i])
+      	# or from scratch
+       	# dists[i, j] = numpy.sqrt(numpy.sum((self.X_train[j] - X[i])**2))
+
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
@@ -93,7 +98,9 @@ class KNearestNeighbor(object):
       # Compute the l2 distance between the ith test point and all training #
       # points, and store the result in dists[i, :].                        #
       #######################################################################
-      pass
+      
+      dists[i, :] = np.sqrt(np.sum((self.X_trainX - X[i, :])**2, axis=1))
+      
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
@@ -121,7 +128,12 @@ class KNearestNeighbor(object):
     # HINT: Try to formulate the l2 distance using matrix multiplication    #
     #       and two broadcast sums.                                         #
     #########################################################################
-    pass
+    
+    # Reference: https://medium.com/dataholiks-distillery/l2-distance-matrix-vectorization-trick-26aa3247ac6c
+    # axis = 1 to perform summation on rows not columns
+    # dimension = (m x n)    +   (1 x n)     +   ((1 x m) ==> (m x 1))
+    dists = np.sqrt(-2 * np.dot(X, self.X_train.T) + np.sum(self.X_train**2, axis=1) + np.sum(X**2, axis=1)[:, np.newaxis])
+    
     #########################################################################
     #                         END OF YOUR CODE                              #
     #########################################################################
@@ -153,7 +165,8 @@ class KNearestNeighbor(object):
       # neighbors. Store these labels in closest_y.                           #
       # Hint: Look up the function numpy.argsort.                             #
       #########################################################################
-      pass
+      sorted_inidices= np.argsort(dists[i, :], axis=1)
+      closest_y = self.y_train[sorted_inidices[:k]]
       #########################################################################
       # TODO:                                                                 #
       # Now that you have found the labels of the k nearest neighbors, you    #
@@ -161,10 +174,10 @@ class KNearestNeighbor(object):
       # Store this label in y_pred[i]. Break ties by choosing the smaller     #
       # label.                                                                #
       #########################################################################
-      pass
+      dic = Counter(closest_y)
+      y_pred[i] = sorted(dic.iteritems(), key=lambda (label,cnt): (cnt,label))[0][0]
       #########################################################################
       #                           END OF YOUR CODE                            # 
       #########################################################################
 
     return y_pred
-
