@@ -73,9 +73,9 @@ class KNearestNeighbor(object):
         # not use a loop over dimension.                                    #
         #####################################################################
         
-        dists[i, j] = np.linalg.norm(self.X_train[j] - X[i])
+        #dists[i, j] = np.linalg.norm(self.X_train[j] - X[i])
       	# or from scratch
-       	# dists[i, j] = numpy.sqrt(numpy.sum((self.X_train[j] - X[i])**2))
+       	dists[i, j] = np.sqrt(np.sum((self.X_train[j] - X[i])**2))
 
         #####################################################################
         #                       END OF YOUR CODE                            #
@@ -99,7 +99,7 @@ class KNearestNeighbor(object):
       # points, and store the result in dists[i, :].                        #
       #######################################################################
       
-      dists[i, :] = np.sqrt(np.sum((self.X_trainX - X[i, :])**2, axis=1))
+      dists[i, :] = np.sqrt(np.sum((self.X_train - X[i, :])**2, axis=1))
       
       #######################################################################
       #                         END OF YOUR CODE                            #
@@ -165,7 +165,7 @@ class KNearestNeighbor(object):
       # neighbors. Store these labels in closest_y.                           #
       # Hint: Look up the function numpy.argsort.                             #
       #########################################################################
-      sorted_inidices= np.argsort(dists[i, :], axis=1)
+      sorted_inidices= np.argsort(dists[i, :])
       closest_y = self.y_train[sorted_inidices[:k]]
       #########################################################################
       # TODO:                                                                 #
@@ -175,7 +175,7 @@ class KNearestNeighbor(object):
       # label.                                                                #
       #########################################################################
       dic = Counter(closest_y)
-      y_pred[i] = sorted(dic.iteritems(), key=lambda (label,cnt): (cnt,label))[0][0]
+      y_pred[i] = sorted(dic.items(), key=lambda element: (-element[1], element[0]))[0][0]
       #########################################################################
       #                           END OF YOUR CODE                            # 
       #########################################################################
