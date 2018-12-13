@@ -140,7 +140,8 @@ class TwoLayerNet(object):
         # regularization loss
         reg_loss = reg * (np.sum(np.dot(W1, W1.T)) + np.sum(np.dot(W2, W2.T))) 
         # cross-entropy-loss
-        loss =  - 1/N * np.sum(np.log10(scores)) 
+        one_hot = self.get_one_hot(y, self.no_classes)
+        loss =  - 1/N * np.sum( np.log10(scores) + (1-one_hot) * np.log10(1-scores) )
         loss += reg_loss
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -166,7 +167,7 @@ class TwoLayerNet(object):
             dldh1 = dldz1 * dz1dh1 , dz1dh1 = 1
         
         """
-        dldh2 = - np.sum( self.get_one_hot(y, self.no_classes) / h2) / N
+        dldh2 = h2 - one_hot
         #print("dldh2 :", np.shape(dldh2))
         dh2dz2 = h2 * (1- h2)
         #print("dh2dz2 :", np.shape(dh2dz2))
