@@ -155,7 +155,7 @@ class TwoLayerNet(object):
         #############################################################################
         
         """
-            l = -sum(log(h2)) / N
+            l = -sum(p * log(h2)) / N
             dldh2 = - sum(1 / h2) / N
             dldz2 = dldh2 * dh2dz2 , dh2dz2 = h2 * (1- h2) -> derv of softmax
             dldw2 = dldz2 * dz2dw2 , dz2dw2 = h1
@@ -166,7 +166,7 @@ class TwoLayerNet(object):
             dldh1 = dldz1 * dz1dh1 , dz1dh1 = 1
         
         """
-        dldh2 = -np.sum(1 / h2) / N
+        dldh2 = - np.sum( self.get_one_hot(y, self.no_classes) / h2) / N
         #print("dldh2 :", np.shape(dldh2))
         dh2dz2 = h2 * (1- h2)
         #print("dh2dz2 :", np.shape(dh2dz2))
@@ -185,13 +185,8 @@ class TwoLayerNet(object):
         dldh1 = np.dot(dldz2, dz2dh1.T) 
         #print("dldh1 :", np.shape(dldh1))
         dh1dz1 = (z1 > 0)
-        display(z1)
-        display(dh1dz1)
         #print("dh1dz1 :", np.shape(dh1dz1))
-        display(dldh1)
         dldz1 = dldh1 * dh1dz1
-        display(dldz1)
-        
         #print("dldz1 :", np.shape(dldz1))
         dz1dw1 = X
         #print("X :", np.shape(X))
@@ -200,11 +195,8 @@ class TwoLayerNet(object):
         dz1dh1 = 1
         #print("dz1dh1 :", np.shape(dz1dh1))
         dldb1 = dldz1 * dz1dh1
-        
         #print("W1", np.shape(W1))
         #print("W2", np.shape(W2))
-        
-        
         grads['W1'] = dldw1
         grads['W2'] = dldw2
         grads['b1'] = dldb1
