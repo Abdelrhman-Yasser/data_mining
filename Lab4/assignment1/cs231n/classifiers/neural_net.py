@@ -138,10 +138,11 @@ class TwoLayerNet(object):
         # classifier loss.                                                          #
         #############################################################################
         # regularization loss
-        reg_loss = reg * (np.sum(np.dot(W1, W1.T)) + np.sum(np.dot(W2, W2.T))) 
+        reg_loss = reg * ( np.sum(np.multiply(W1, W1)) + np.sum(np.multiply(W2, W2) )) 
         # cross-entropy-loss
         one_hot = self.get_one_hot(y, self.no_classes)
-        loss =  - 1/N * np.sum( np.log10(scores) + (1-one_hot) * np.log10(1-scores) )
+        
+        loss =  - 1/N * np.sum( one_hot * np.log(scores) )
         loss += reg_loss
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -156,50 +157,57 @@ class TwoLayerNet(object):
         #############################################################################
         
         """
-            l = -sum(p * log(h2)) / N
-            dldh2 = - sum(1 / h2) / N
-            dldz2 = dldh2 * dh2dz2 , dh2dz2 = h2 * (1- h2) -> derv of softmax
+            z1 = x * w1 + b1
+            h1 = relu -> max(0 , z1)
+            z2 = h1 * w2 + b2
+            h2 = softmax(z2)
+           
+            dldh2 = h2 - one_hot
+            dldz2 = dldh2 * dh2dz2 , dh2dz2 = h2 * (1 - h2) -> derv of softmax
             dldw2 = dldz2 * dz2dw2 , dz2dw2 = h1
             dldb2 = dldz2 * dz2db2 , dz2db2 = 1
             dldh1 = dldz2 * dz2dh1 , dz2dh1 = w2
             dldz1 = dldh1 * dh1dz1 , dh1dz1 = 1(z1 > 0)
             dldw1 = dldz1 * dz1dw1 , dz1dw1 = x
             dldh1 = dldz1 * dz1dh1 , dz1dh1 = 1
-        
-        """
-        dldh2 = h2 - one_hot
-        #print("dldh2 :", np.shape(dldh2))
-        dh2dz2 = h2 * (1- h2)
-        #print("dh2dz2 :", np.shape(dh2dz2))
-        dldz2 = dldh2 * dh2dz2
-        #print("dldz2 :", np.shape(dldz2))
-        dz2dw2 = h1
+            
+            dldz2 = (h2 - one_hot) / N   
         #print("dz2dw2 :", np.shape(dz2dw2))
-        dldw2 = np.dot(dz2dw2.T, dldz2)
-        #print("dldw2 :", np.shape(dldw2))
-        dz2db2 = 1
+        dldw2 = h1.T.dot(dldz2)
         #print("dz2db2 :", np.shape(dz2db2))
-        dldb2 = dldz2 * dz2db2
+        dldb2 = np.sum(dldz2, axis=0)
         #print("dldb2 :", np.shape(dldb2))
-        dz2dh1 = W2
-        #print("dz2dh1 :", np.shape(dz2dh1))
-        dldh1 = np.dot(dldz2, dz2dh1.T) 
+        dldh1 = dldz2.dot(W2.T) 
         #print("dldh1 :", np.shape(dldh1))
-        dh1dz1 = (z1 > 0)
-        #print("dh1dz1 :", np.shape(dh1dz1))
-        dldz1 = dldh1 * dh1dz1
-        #print("dldz1 :", np.shape(dldz1))
-        dz1dw1 = X
+        dldz1 = dldh1 * (z1 > 0)
         #print("X :", np.shape(X))
-        dldw1 = np.dot(dz1dw1.T, dldz1) 
+        dldw1 = X.T.dot(dldz1) 
         #print("dldw1 :", np.shape(dldw1))
-        dz1dh1 = 1
-        #print("dz1dh1 :", np.shape(dz1dh1))
-        dldb1 = dldz1 * dz1dh1
+        dldb1 = np.sum(dldz1, axis=0)
         #print("W1", np.shape(W1))
         #print("W2", np.shape(W2))
-        grads['W1'] = dldw1
-        grads['W2'] = dldw2
+        
+        grads['W1'] = dldw1 + 2 * reg * W1
+        grads['W2'] = dldw2 + 2 * reg * W2
+        grads['b1'] = dldb1
+        grads['b2'] = dldb2
+        """
+        dldz2 = h2 - one_hot 
+        dz2dw2 = h1
+        dldw2 = 1/N * np.dot(dz2dw2.T, dldz2)
+        dz2db2 = 1
+        dldb2 = 1/N * np.sum(dldz2 * dz2db2 , axis=0)
+        dz2dh1 = W2
+        dldh1 = np.dot(dldz2, dz2dh1.T) 
+        dh1dz1 = (z1 > 0)
+        dldz1 = dldh1 * dh1dz1
+        dz1dw1 = X
+        dldw1 = 1/N * np.dot(dz1dw1.T, dldz1) 
+        dz1dh1 = 1
+        dldb1 = 1/N * np.sum(dldz1 * dz1dh1, axis=0)
+        
+        grads['W1'] = dldw1 + 2 * reg * W1
+        grads['W2'] = dldw2 + 2 * reg * W2
         grads['b1'] = dldb1
         grads['b2'] = dldb2
         
@@ -240,46 +248,50 @@ class TwoLayerNet(object):
         val_acc_history = []
 
         for it in range(num_iters):
-          X_batch = None
-          y_batch = None
 
-          #########################################################################
-          # TODO: Create a random minibatch of training data and labels, storing  #
-          # them in X_batch and y_batch respectively.                             #
-          #########################################################################
-          pass
-          #########################################################################
-          #                             END OF YOUR CODE                          #
-          #########################################################################
+            #########################################################################
+            # TODO: Create a random minibatch of training data and labels, storing  #
+            # them in X_batch and y_batch respectively.                             #
+            #########################################################################
+            random_batch = np.random.choice(num_train, batch_size)
+            X_batch = X[random_batch]
+            y_batch = y[random_batch]
+            #########################################################################
+            #                             END OF YOUR CODE                          #
+            #########################################################################
 
-          # Compute loss and gradients using the current minibatch
-          loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
-          loss_history.append(loss)
+            # Compute loss and gradients using the current minibatch
+            loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
+            loss_history.append(loss)
 
-          #########################################################################
-          # TODO: Use the gradients in the grads dictionary to update the         #
-          # parameters of the network (stored in the dictionary self.params)      #
-          # using stochastic gradient descent. You'll need to use the gradients   #
-          # stored in the grads dictionary defined above.                         #
-          #########################################################################
-          pass
-          #########################################################################
-          #                             END OF YOUR CODE                          #
-          #########################################################################
+            #########################################################################
+            # TODO: Use the gradients in the grads dictionary to update the         #
+            # parameters of the network (stored in the dictionary self.params)      #
+            # using stochastic gradient descent. You'll need to use the gradients   #
+            # stored in the grads dictionary defined above.                         #
+            #########################################################################
+            self.params['W1'] -= learning_rate * grads['W1']
+            self.params['W2'] -= learning_rate * grads['W2']
+            self.params['b1'] -= learning_rate * grads['b1']
+            self.params['b2'] -= learning_rate * grads['b2']
+          
+            #########################################################################
+            #                             END OF YOUR CODE                          #
+            #########################################################################
 
-          if verbose and it % 100 == 0:
-            print('iteration %d / %d: loss %f' % (it, num_iters, loss))
+            if verbose and it % 100 == 0:
+                print('iteration %d / %d: loss %f' % (it, num_iters, loss))
 
-          # Every epoch, check train and val accuracy and decay learning rate.
-          if it % iterations_per_epoch == 0:
-            # Check accuracy
-            train_acc = (self.predict(X_batch) == y_batch).mean()
-            val_acc = (self.predict(X_val) == y_val).mean()
-            train_acc_history.append(train_acc)
-            val_acc_history.append(val_acc)
+            # Every epoch, check train and val accuracy and decay learning rate.
+            if it % iterations_per_epoch == 0:
+                # Check accuracy
+                train_acc = (self.predict(X_batch) == y_batch).mean()
+                val_acc = (self.predict(X_val) == y_val).mean()
+                train_acc_history.append(train_acc)
+                val_acc_history.append(val_acc)
 
-            # Decay learning rate
-            learning_rate *= learning_rate_decay
+                # Decay learning rate
+                learning_rate *= learning_rate_decay
 
         return {
           'loss_history': loss_history,
@@ -307,7 +319,21 @@ class TwoLayerNet(object):
         ###########################################################################
         # TODO: Implement this function; it should be VERY simple!                #
         ###########################################################################
-        pass
+        
+        #Unpack variables from the params dictionary
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+        N, D = X.shape
+        
+        # first layer activations
+        z1 = X.dot(W1) + b1
+        h1 = self.relu(z1)
+        #second layer activations
+        z2 = h1.dot(W2) + b2
+        h2 = self.softmax(z2)
+        
+        y_pred = np.argmax(h2, axis=1)
+        
         ###########################################################################
         #                              END OF YOUR CODE                           #
         ###########################################################################
