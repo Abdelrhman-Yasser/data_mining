@@ -6,8 +6,8 @@ def softmax(x):
     return np.exp(x) / np.sum(np.exp(x) , axis = -1 , keepdims = True)
 
 def get_one_hot(targets, nb_classes):
-        res = np.eye(nb_classes)[np.array(targets).reshape(-1)]
-        return res.reshape(list(targets.shape)+[nb_classes]) 
+    res = np.eye(nb_classes)[np.array(targets).reshape(-1)]
+    return res.reshape(list(targets.shape)+[nb_classes]) 
 
 def softmax_loss_naive(W, X, y, reg):
     """
