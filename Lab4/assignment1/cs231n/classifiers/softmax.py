@@ -55,6 +55,8 @@ def softmax_loss_vectorized(W, X, y, reg):
     reg_loss = reg * np.sum(np.multiply(W, W))
     # cross-entropy-loss
     one_hot = get_one_hot(y, num_classes)
+    # maximum loss = (-1/N) * sum over N samples ([0000 1 000] * [1/N 1/N ......])
+    # which will be -1 * np.log(0.1) 
     loss =  - 1/N * np.sum( one_hot * np.log(scores) )
     loss += reg_loss
     # gradient

@@ -11978,7 +11978,10 @@ sanity check: 2.302585
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Inline-Question-1:">Inline Question 1:<a class="anchor-link" href="#Inline-Question-1:">&#182;</a></h2><p>Why do we expect our loss to be close to -log(0.1)? Explain briefly.**</p>
-<p><strong>Your answer:</strong> <em>Fill this in</em></p>
+<p><strong>Your answer:</strong>
+The loss calculated from <strong>loss =  - 1/N <em> np.sum( one_hot </em> np.log(scores))</strong><br/>
+maximum loss = (-1/N) <em> sum over N samples ([0000 1 000] </em> [1/N 1/N ......])<br/>
+which will be -1 * np.log(0.1)</p>
 
 </div>
 </div>
